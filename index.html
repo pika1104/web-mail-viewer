@@ -207,8 +207,8 @@ function saveConfig() {
 }
 
 function initSupabase() {
-  const url = localStorage.getItem('supa_url');
-  const key = localStorage.getItem('supa_key');
+  const url = localStorage.getItem('supa_url') || 'https://dgfguaswqlsapgbfvtdv.supabase.co';
+  const key = localStorage.getItem('supa_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZmd1YXN3cWxzYXBnYmZ2dGR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTEwMjgsImV4cCI6MjA5NDkyNzAyOH0.qz7VNnEe53G3Fa7fE5VMkVbf-W6ws98muePAdSZqKQY';
   if (!url || !key) {
     document.getElementById('config-overlay').style.display = 'flex';
     return;
