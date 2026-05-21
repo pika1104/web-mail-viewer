@@ -2,30 +2,39 @@
 
 自分のメールアドレスを登録すると、そのアドレスに届いたメールをWebブラウザから確認できるサービスです。
 
-## 機能
+## 🚀 Supabase バックエンド版 (New!)
 
-- **メールアドレス登録**: 任意のメールアドレスを登録
-- **SMTP受信サーバー**: 登録したアドレス宛のメールを直接受信
-- **Gmail連携**: Gmail OAuth2を使ってGmailのメールも取得可能
-- **Webインターフェース**: ブラウザからメールを閲覧・管理
-- **リアルタイム更新**: 30秒ごとに自動更新
+Supabaseを利用して、サーバーのインストールなしで動作するバージョンを追加しました。
+データベース、認証、リアルタイム通知、Edge Functionsを利用しています。
 
-## 🚀 インストール不要版（推奨）
+### 特徴
+- **Supabase Auth**: メール/パスワードによるユーザー認証
+- **Supabase DB**: アカウント情報とメールデータの永続化
+- **Supabase Realtime**: 新着メールの自動更新
+- **Edge Functions**: Gmail API連携（シミュレーション）
+- **No Build Step**: HTMLファイルをブラウザで開くだけで動作（SDKはCDN経由）
+
+### セットアップ手順
+
+1. **Supabase プロジェクトの作成**: [Supabase Dashboard](https://app.supabase.com/) でプロジェクトを作成。
+2. **データベースのセットアップ**: `supabase/migrations/20240521000000_create_tables.sql` を SQL Editor で実行。
+3. **Edge Functions のデプロイ**: `supabase functions deploy fetch-gmail` を実行。
+4. **アプリの起動**: `index.html` をブラウザで開き、Supabase URL と Anon Key を入力。
+
+---
+
+## 🚀 インストール不要版（ローカルストレージ版）
 
 **`index.html` をダウンロードしてブラウザで開くだけ！**
-
-何もインストールする必要はありません。
 
 1. `index.html` をダウンロード
 2. ブラウザで開く
 3. メールアドレスを登録
 4. Gmail連携を設定してメールを取得
 
-> **テスト方法**: `Ctrl+M` を押すとダミーメールが届きます
-
 ---
 
-## セットアップ（サーバー版）
+## セットアップ（サーバー版 - Node.js）
 
 ### 1. インストール
 
@@ -41,86 +50,19 @@ npm install
 cp .env.example .env
 ```
 
-`.env` ファイルを編集して設定を入力してください。
-
 ### 3. 起動
 
 ```bash
 npm start
 ```
 
-- Web UI: http://localhost:3000
-- SMTP Server: port 2525
-
-## 使い方
-
-### 基本的な使い方
-
-1. ブラウザで http://localhost:3000 を開く
-2. サイドバーからメールアドレスを登録
-3. そのアドレス宛にメールを送信（SMTPポート2525宛）
-4. Webページ上でメールを確認
-
-### SMTPでメールを送信するテスト
-
-```bash
-# swaks コマンドを使用
-swaks --to registered@example.com --from sender@example.com \
-  --server localhost --port 2525 \
-  --header "Subject: テスト" --body "Hello!"
-```
-
-### Gmail連携
-
-1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials) でOAuth2クライアントを作成
-2. `.env` に `GMAIL_CLIENT_ID` と `GMAIL_CLIENT_SECRET` を設定
-3. リダイレクトURIに `http://localhost:3000/api/gmail/callback` を追加
-4. Web UIの「Gmail連携」ボタンからOAuth認証
-5. 「Gmail取得」ボタンでメールを取得
-
-## 本番環境へのデプロイ
-
-### ドメインでメールを受信する場合
-
-1. ドメインのMXレコードをサーバーのIPに設定
-2. SMTPポートを25に変更（root権限が必要）
-3. Let's Encryptなどで証明書を取得してTLSを有効化
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install --production
-COPY . .
-EXPOSE 3000 2525
-CMD ["npm", "start"]
-```
-
-## API
-
-| Method | Endpoint | 説明 |
-|--------|----------|------|
-| POST | /api/accounts | アカウント登録 |
-| GET | /api/accounts | アカウント一覧 |
-| DELETE | /api/accounts/:id | アカウント削除 |
-| GET | /api/accounts/:id/emails | メール一覧 |
-| GET | /api/emails/:id | メール詳細 |
-| DELETE | /api/emails/:id | メール削除 |
-| PATCH | /api/emails/:id/read | 既読/未読切替 |
-| GET | /api/gmail/auth-url | Gmail認証URL取得 |
-| POST | /api/accounts/:id/fetch-gmail | Gmailメール取得 |
-| GET | /api/stats | 統計情報 |
-
-## 技術スタック
-
-- **Backend**: Node.js, Express
-- **SMTP**: smtp-server (Node.js)
-- **Database**: SQLite (better-sqlite3)
-- **Gmail**: Google APIs (OAuth2 + Gmail API)
-- **Frontend**: Vanilla HTML/CSS/JavaScript
+## ディレクトリ構成
+- `index.html`: フロントエンド（Supabase JS SDK使用）
+- `supabase/`
+  - `migrations/`: テーブル定義SQL
+  - `functions/`: Gmail連携用 Edge Functions (Deno)
+- `server/`: Node.js サーバー版のソースコード
+- `client/`: 以前のクライアント用ソース
 
 ## ライセンス
-
 MIT
