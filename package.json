@@ -1,0 +1,23 @@
+{
+  "name": "web-mail-viewer",
+  "version": "1.0.0",
+  "description": "Register your email address and view incoming messages from a web interface. Includes SMTP server for receiving mail and Gmail IMAP integration.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "smtp-server": "^3.13.0",
+    "mailparser": "^3.6.5",
+    "googleapis": "^126.0.1",
+    "nodemailer": "^6.9.7",
+    "better-sqlite3": "^9.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.0"
+  },
+  "keywords": ["email", "smtp", "gmail", "web-mail", "mail-viewer"],
+  "license": "MIT"
+}

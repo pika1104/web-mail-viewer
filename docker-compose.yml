@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web-mail-viewer:
+    build: .
+    ports:
+      - "3000:3000"
+      - "2525:2525"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped

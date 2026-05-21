@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Mail Viewer</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#f5f5f5; color:#333; }
+
+/* Header */
+.header {
+  background:#1a73e8; color:#fff; padding:16px 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
+}
+.header h1 { font-size:22px; font-weight:600; }
+.header .stats { font-size:13px; opacity:0.9; }
+
+/* Layout */
+.container { display:flex; height:calc(100vh - 60px); }
+
+/* Sidebar */
+.sidebar {
+  width:280px; background:#fff; border-right:1px solid #ddd;
+  display:flex; flex-direction:column; overflow-y:auto;
+}
+.sidebar-header { padding:16px; border-bottom:1px solid #eee; }
+.sidebar-header h3 { font-size:14px; color:#666; margin-bottom:8px; }
+
+.account-item {
+  padding:12px 16px; cursor:pointer; border-bottom:1px solid #f0f0f0;
+  transition:background 0.15s;
+}
+.account-item:hover { background:#e8f0fe; }
+.account-item.active { background:#d2e3fc; border-left:3px solid #1a73e8; }
+.account-item .email { font-size:13px; font-weight:500; color:#333; }
+.account-item .meta { font-size:11px; color:#888; margin-top:2px; }
+
+/* Add account form */
+.add-form { padding:12px 16px; border-top:1px solid #eee; }
+.add-form input {
+  width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:4px;
+  font-size:13px; margin-bottom:6px;
+}
+.add-form input:focus { outline:none; border-color:#1a73e8; }
+
+.btn {
+  padding:8px 14px; border:none; border-radius:4px;
+  font-size:13px; cursor:pointer; font-weight:500;
+  transition:background 0.15s;
+}
+.btn-primary { background:#1a73e8; color:#fff; }
+.btn-primary:hover { background:#1557b0; }
+.btn-danger { background:#d93025; color:#fff; }
+.btn-danger:hover { background:#b3261e; }
+.btn-secondary { background:#e8eaed; color:#333; }
+.btn-secondary:hover { background:#d2d5d9; }
+.btn-gmail { background:#ea4335; color:#fff; }
+.btn-gmail:hover { background:#c5221f; }
+.btn-sm { padding:5px 10px; font-size:12px; }
+
+/* Main content */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+/* Email list */
+.email-list { flex:1; overflow-y:auto; }
+.email-list-header {
+  padding:12px 20px; background:#fff; border-bottom:1px solid #ddd;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.email-list-header h2 { font-size:16px; color:#333; }
+
+.email-item {
+  padding:12px 20px; border-bottom:1px solid #f0f0f0;
+  cursor:pointer; display:flex; align-items:flex-start; gap:12px;
+  transition:background 0.15s; background:#fff;
+}
+.email-item:hover { background:#f8f9fa; }
+.email-item.unread { background:#e8f0fe; font-weight:500; }
+.email-item .sender { font-size:13px; color:#333; min-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.email-item .subject { font-size:13px; color:#333; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.email-item .preview { font-size:12px; color:#888; margin-left:8px; flex:2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.email-item .date { font-size:11px; color:#888; min-width:80px; text-align:right; }
+.email-item .source-badge {
+  font-size:9px; padding:2px 5px; border-radius:3px;
+  background:#e8eaed; color:#666; margin-left:6px;
+}
+.email-item .source-badge.gmail { background:#fce8e6; color:#d93025; }
+
+/* Email detail */
+.email-detail {
+  display:none; flex:1; overflow-y:auto; background:#fff;
+  padding:24px; border-left:1px solid #ddd;
+}
+.email-detail.show { display:block; }
+.email-detail .back-btn { margin-bottom:16px; }
+.email-detail .subject-line { font-size:20px; font-weight:600; margin-bottom:12px; }
+.email-detail .meta-line { font-size:13px; color:#666; margin-bottom:4px; }
+.email-detail .body-content { margin-top:20px; padding-top:16px; border-top:1px solid #eee; line-height:1.7; font-size:14px; }
+.email-detail .body-content iframe { width:100%; min-height:400px; border:none; }
+
+/* Empty state */
+.empty-state {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; color:#888; text-align:center; padding:40px;
+}
+.empty-state .icon { font-size:48px; margin-bottom:16px; }
+.empty-state p { font-size:14px; line-height:1.6; }
+
+/* Responsive */
+@media (max-width:768px) {
+  .container { flex-direction:column; }
+  .sidebar { width:100%; height:auto; max-height:200px; }
+  .email-item .preview { display:none; }
+  .email-item .sender { min-width:100px; }
+}
+
+/* Notification */
+.toast {
+  position:fixed; bottom:20px; right:20px;
+  background:#333; color:#fff; padding:12px 20px;
+  border-radius:8px; font-size:13px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  transform:translateY(100px); opacity:0;
+  transition:all 0.3s ease;
+  z-index:1000;
+}
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { background:#0f9d58; }
+.toast.error { background:#d93025; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📧 Web Mail Viewer</h1>
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h3>登録アカウント</h3>
+    </div>
+    <div id="account-list"></div>
+    <div class="add-form">
+      <input type="email" id="new-email" placeholder="メールアドレスを入力...">
+      <input type="text" id="new-name" placeholder="表示名 (任意)">
+      <button class="btn btn-primary" onclick="addAccount()" style="width:100%">+ 登録</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Email List View -->
+    <div id="list-view">
+      <div class="email-list-header">
+        <h2 id="list-title">受信トレイ</h2>
+        <div>
+          <button class="btn btn-secondary btn-sm" onclick="refreshEmails()">🔄 更新</button>
+          <button class="btn btn-gmail btn-sm" id="gmail-btn" style="display:none" onclick="connectGmail()">Gmail連携</button>
+          <button class="btn btn-secondary btn-sm" id="fetch-gmail-btn" style="display:none" onclick="fetchGmail()">📥 Gmail取得</button>
+        </div>
+      </div>
+      <div class="email-list" id="email-list">
+        <div class="empty-state">
+          <div class="icon">📬</div>
+          <p>左のサイドバーからメールアドレスを登録してください。<br>
+          登録したアドレスに届いたメールがここに表示されます。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Detail View -->
+    <div class="email-detail" id="detail-view">
+      <button class="btn btn-secondary back-btn" onclick="showList()">← 戻る</button>
+      <div class="subject-line" id="detail-subject"></div>
+      <div class="meta-line" id="detail-from"></div>
+      <div class="meta-line" id="detail-to"></div>
+      <div class="meta-line" id="detail-date"></div>
+      <div class="body-content" id="detail-body"></div>
+      <div style="margin-top:16px">
+        <button class="btn btn-danger btn-sm" id="delete-email-btn">🗑 削除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let currentAccountId = null;
+let accounts = [];
+
+// ─── Toast ───
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ─── Accounts ───
+async function loadAccounts() {
+  const res = await fetch(`${API}/accounts`);
+  accounts = await res.json();
+  renderAccounts();
+  loadStats();
+}
+
+function renderAccounts() {
+  const el = document.getElementById('account-list');
+  if (accounts.length === 0) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:#888;font-size:12px;">アカウント未登録</div>';
+    return;
+  }
+  el.innerHTML = accounts.map(a => `
+    <div class="account-item ${a.id === currentAccountId ? 'active' : ''}" onclick="selectAccount(${a.id})">
+      <div class="email">${a.email}</div>
+      <div class="meta">${a.display_name || ''} · ${new Date(a.created_at).toLocaleDateString('ja-JP')}</div>
+    </div>
+  `).join('');
+}
+
+async function addAccount() {
+  const email = document.getElementById('new-email').value.trim();
+  const name = document.getElementById('new-name').value.trim();
+  if (!email) return showToast('メールアドレスを入力してください', 'error');
+
+  const res = await fetch(`${API}/accounts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, display_name: name })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    showToast(`${email} を登録しました`, 'success');
+    document.getElementById('new-email').value = '';
+    document.getElementById('new-name').value = '';
+    loadAccounts();
+  } else {
+    showToast(data.error, 'error');
+  }
+}
+
+function selectAccount(id) {
+  currentAccountId = id;
+  renderAccounts();
+  loadEmails();
+  
+  // Show Gmail buttons
+  const account = accounts.find(a => a.id === id);
+  document.getElementById('gmail-btn').style.display = 'inline-block';
+  document.getElementById('fetch-gmail-btn').style.display = account?.gmail_refresh_token ? 'inline-block' : 'none';
+  document.getElementById('list-title').textContent = account?.email || '受信トレイ';
+}
+
+// ─── Emails ───
+async function loadEmails() {
+  if (!currentAccountId) return;
+  const res = await fetch(`${API}/accounts/${currentAccountId}/emails`);
+  const data = await res.json();
+  renderEmails(data.emails);
+}
+
+function renderEmails(emails) {
+  const el = document.getElementById('email-list');
+  if (!emails || emails.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>メールはまだありません。<br>このアドレスにメールを送信すると、ここに表示されます。</p></div>`;
+    return;
+  }
+  el.innerHTML = emails.map(e => `
+    <div class="email-item ${e.is_read ? '' : 'unread'}" onclick="openEmail(${e.id})">
+      <div class="sender">${e.from_name || e.from_address}</div>
+      <div class="subject">${e.subject || '(件名なし)'}</div>
+      <span class="source-badge ${e.source === 'gmail' ? 'gmail' : ''}">${e.source}</span>
+      <div class="date">${formatDate(e.received_at)}</div>
+    </div>
+  `).join('');
+}
+
+async function openEmail(id) {
+  const res = await fetch(`${API}/emails/${id}`);
+  const email = await res.json();
+  
+  document.getElementById('detail-subject').textContent = email.subject || '(件名なし)';
+  document.getElementById('detail-from').textContent = `差出人: ${email.from_name ? email.from_name + ' <' + email.from_address + '>' : email.from_address}`;
+  document.getElementById('detail-to').textContent = `宛先: ${email.to_address}`;
+  document.getElementById('detail-date').textContent = `日時: ${new Date(email.received_at).toLocaleString('ja-JP')}`;
+  
+  const bodyEl = document.getElementById('detail-body');
+  if (email.body_html) {
+    bodyEl.innerHTML = `<iframe srcdoc="${email.body_html.replace(/"/g, '&quot;')}" sandbox="allow-same-origin"></iframe>`;
+  } else {
+    bodyEl.innerHTML = `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(email.body_text || '(本文なし)')}</pre>`;
+  }
+  
+  document.getElementById('delete-email-btn').onclick = () => deleteEmail(id);
+  
+  document.getElementById('list-view').style.display = 'none';
+  document.getElementById('detail-view').classList.add('show');
+  
+  // Refresh list to update read status
+  loadEmails();
+}
+
+async function deleteEmail(id) {
+  if (!confirm('このメールを削除しますか？')) return;
+  await fetch(`${API}/emails/${id}`, { method: 'DELETE' });
+  showToast('メールを削除しました', 'success');
+  showList();
+  loadEmails();
+}
+
+function showList() {
+  document.getElementById('list-view').style.display = 'block';
+  document.getElementById('detail-view').classList.remove('show');
+}
+
+function refreshEmails() {
+  loadEmails();
+  showToast('更新しました', 'success');
+}
+
+// ─── Gmail ───
+async function connectGmail() {
+  if (!currentAccountId) return;
+  const res = await fetch(`${API}/gmail/auth-url?account_id=${currentAccountId}`);
+  const data = await res.json();
+  if (data.url) {
+    window.open(data.url, '_blank');
+  } else {
+    showToast(data.error || 'Gmail連携に失敗しました', 'error');
+  }
+}
+
+async function fetchGmail() {
+  if (!currentAccountId) return;
+  showToast('Gmailからメールを取得中...', '');
+  const res = await fetch(`${API}/accounts/${currentAccountId}/fetch-gmail`, { method: 'POST' });
+  const data = await res.json();
+  if (res.ok) {
+    showToast(data.message, 'success');
+    loadEmails();
+  } else {
+    showToast(data.error, 'error');
+  }
+}
+
+// ─── Stats ───
+async function loadStats() {
+  const res = await fetch(`${API}/stats`);
+  const data = await res.json();
+  document.getElementById('stats').textContent = 
+    `${data.total_accounts} アカウント · ${data.total_emails} 通 · ${data.unread_emails} 未読`;
+}
+
+// ─── Helpers ───
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
+  }
+  return d.toLocaleDateString('ja-JP', { month:'short', day:'numeric' });
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Init ───
+loadAccounts();
+
+// Check for Gmail callback
+if (window.location.search.includes('gmail=connected')) {
+  showToast('Gmail連携が完了しました！', 'success');
+  history.replaceState(null, '', '/');
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+  if (currentAccountId) loadEmails();
+  loadStats();
+}, 30000);
+</script>
+</body>
+</html>
