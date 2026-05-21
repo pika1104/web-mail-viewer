@@ -191,7 +191,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="toast" id="toast"></div>
 
 <script>
-let supabase;
+const { createClient } = window.supabase;
+let sb;
 let currentUser;
 let accounts = [];
 let currentAccountId = null;
@@ -214,13 +215,13 @@ function initSupabase() {
     return;
   }
   document.getElementById('config-overlay').style.display = 'none';
-  supabase = supabase.createClient(url, key);
+  sb = createClient(url, key);
   checkUser();
 }
 
 // --- Auth ---
 async function checkUser() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await sb.auth.getUser();
   if (user) {
     currentUser = user;
     document.getElementById('auth-container').style.display = 'none';
@@ -238,21 +239,21 @@ async function handleAuth(type) {
   const email = document.getElementById('auth-email').value;
   const password = document.getElementById('auth-password').value;
   const { error } = type === 'login' 
-    ? await supabase.auth.signInWithPassword({ email, password })
-    : await supabase.auth.signUp({ email, password });
+    ? await sb.auth.signInWithPassword({ email, password })
+    : await sb.auth.signUp({ email, password });
   
   if (error) alert(error.message);
   else checkUser();
 }
 
 async function logout() {
-  await supabase.auth.signOut();
+  await sb.auth.signOut();
   location.reload();
 }
 
 // --- Accounts ---
 async function loadAccounts() {
-  const { data, error } = await supabase.from('accounts').select('*');
+  const { data, error } = await sb.from('accounts').select('*');
   if (error) return console.error(error);
   accounts = data;
   renderAccounts();
@@ -261,7 +262,7 @@ async function loadAccounts() {
 async function addAccount() {
   const email = document.getElementById('new-account-email').value;
   if (!email) return;
-  const { error } = await supabase.from('accounts').insert([{ email, user_id: currentUser.id }]);
+  const { error } = await sb.from('accounts').insert([{ email, user_id: currentUser.id }]);
   if (error) alert(error.message);
   else {
     document.getElementById('new-account-email').value = '';
@@ -290,14 +291,14 @@ function selectAccount(id) {
 
 async function deleteAccount(id) {
   if (!confirm('削除しますか？')) return;
-  await supabase.from('accounts').delete().eq('id', id);
+  await sb.from('accounts').delete().eq('id', id);
   loadAccounts();
 }
 
 // --- Emails ---
 async function loadEmails() {
   if (!currentAccountId) return;
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('emails')
     .select('*')
     .eq('account_id', currentAccountId)
@@ -315,7 +316,7 @@ async function loadEmails() {
 }
 
 async function viewEmail(id) {
-  const { data: email } = await supabase.from('emails').select('*').eq('id', id).single();
+  const { data: email } = await sb.from('emails').select('*').eq('id', id).single();
   document.getElementById('list-view').style.display = 'none';
   document.getElementById('detail-view').classList.add('show');
   document.getElementById('detail-subject').textContent = email.subject;
@@ -323,7 +324,7 @@ async function viewEmail(id) {
   document.getElementById('detail-body').innerHTML = email.body_html || `<pre>${email.body_text}</pre>`;
   
   if (!email.is_read) {
-    await supabase.from('emails').update({ is_read: true }).eq('id', id);
+    await sb.from('emails').update({ is_read: true }).eq('id', id);
     loadEmails();
   }
 }
@@ -336,7 +337,7 @@ function showList() {
 async function fetchEmails() {
   if (!currentAccountId) return;
   showToast('Fetching emails via Edge Function...');
-  const { data, error } = await supabase.functions.invoke('fetch-gmail', {
+  const { data, error } = await sb.functions.invoke('fetch-gmail', {
     body: { account_id: currentAccountId }
   });
   if (error) alert(error.message);
@@ -344,7 +345,7 @@ async function fetchEmails() {
 }
 
 function subscribeToEmails() {
-  supabase.channel('emails_realtime')
+  sb.channel('emails_realtime')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'emails' }, payload => {
       if (payload.new.account_id === currentAccountId) {
         loadEmails();
