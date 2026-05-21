@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Mail Viewer</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#f0f2f5; color:#333; min-height:100vh; }
+
+/* Header */
+.header {
+  background:linear-gradient(135deg, #1a73e8, #0d47a1);
+  color:#fff; padding:16px 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,0.15);
+}
+.header h1 { font-size:20px; font-weight:600; display:flex; align-items:center; gap:8px; }
+.header .stats { font-size:12px; opacity:0.9; }
+
+/* Layout */
+.container { display:flex; height:calc(100vh - 56px); }
+
+/* Sidebar */
+.sidebar {
+  width:300px; background:#fff; border-right:1px solid #e0e0e0;
+  display:flex; flex-direction:column;
+}
+.sidebar-section { padding:14px 16px; border-bottom:1px solid #eee; }
+.sidebar-section h3 { font-size:12px; color:#666; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
+
+.account-item {
+  padding:10px 16px; cursor:pointer; border-bottom:1px solid #f5f5f5;
+  transition:all 0.15s; display:flex; align-items:center; justify-content:space-between;
+}
+.account-item:hover { background:#e8f0fe; }
+.account-item.active { background:#d2e3fc; border-left:3px solid #1a73e8; }
+.account-item .email-text { font-size:13px; font-weight:500; color:#333; word-break:break-all; }
+.account-item .unread-badge {
+  background:#d93025; color:#fff; font-size:10px; padding:2px 6px;
+  border-radius:10px; min-width:18px; text-align:center;
+}
+.account-item .delete-btn {
+  background:none; border:none; color:#999; cursor:pointer; font-size:14px; padding:2px 6px;
+}
+.account-item .delete-btn:hover { color:#d93025; }
+
+/* Add form */
+.add-section { padding:14px 16px; border-top:1px solid #eee; margin-top:auto; }
+.add-section input {
+  width:100%; padding:9px 12px; border:1px solid #ddd; border-radius:6px;
+  font-size:13px; margin-bottom:8px; transition:border 0.2s;
+}
+.add-section input:focus { outline:none; border-color:#1a73e8; box-shadow:0 0 0 2px rgba(26,115,232,0.1); }
+
+.btn {
+  padding:8px 16px; border:none; border-radius:6px;
+  font-size:13px; cursor:pointer; font-weight:500;
+  transition:all 0.15s; display:inline-flex; align-items:center; gap:4px;
+}
+.btn-primary { background:#1a73e8; color:#fff; width:100%; justify-content:center; }
+.btn-primary:hover { background:#1557b0; }
+.btn-secondary { background:#e8eaed; color:#333; }
+.btn-secondary:hover { background:#d2d5d9; }
+.btn-sm { padding:5px 10px; font-size:12px; }
+.btn-gmail { background:#ea4335; color:#fff; }
+.btn-gmail:hover { background:#c5221f; }
+.btn-fetch { background:#34a853; color:#fff; }
+.btn-fetch:hover { background:#2d8e47; }
+
+/* Main */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+/* Toolbar */
+.toolbar {
+  padding:10px 20px; background:#fff; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.toolbar h2 { font-size:15px; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.toolbar-actions { display:flex; gap:6px; flex-shrink:0; }
+
+/* Email list */
+.email-list { flex:1; overflow-y:auto; background:#fff; }
+
+.email-item {
+  padding:12px 20px; border-bottom:1px solid #f0f0f0;
+  cursor:pointer; display:grid; grid-template-columns:180px 1fr auto;
+  align-items:center; gap:12px; transition:background 0.1s;
+}
+.email-item:hover { background:#f8f9fa; }
+.email-item.unread { background:#e8f0fe; }
+.email-item.unread .sender { font-weight:600; }
+.email-item.unread .subject { font-weight:600; }
+.email-item .sender { font-size:13px; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.email-item .subject-line { display:flex; align-items:center; gap:6px; overflow:hidden; }
+.email-item .subject { font-size:13px; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.email-item .preview { font-size:12px; color:#999; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.email-item .date { font-size:11px; color:#888; white-space:nowrap; }
+.email-item .source-tag {
+  font-size:9px; padding:1px 5px; border-radius:3px;
+  background:#e8eaed; color:#666;
+}
+.email-item .source-tag.gmail { background:#fce8e6; color:#d93025; }
+.email-item .source-tag.smtp { background:#e6f4ea; color:#137333; }
+
+/* Email detail */
+.email-detail { display:none; flex-direction:column; height:100%; background:#fff; }
+.email-detail.show { display:flex; }
+.detail-header { padding:16px 24px; border-bottom:1px solid #eee; }
+.detail-header .subject-line { font-size:18px; font-weight:600; margin-bottom:12px; color:#202124; }
+.detail-meta { display:flex; flex-direction:column; gap:4px; }
+.detail-meta .meta-row { font-size:13px; color:#5f6368; }
+.detail-meta .meta-row strong { color:#333; }
+.detail-body { flex:1; overflow-y:auto; padding:20px 24px; }
+.detail-body .html-frame { width:100%; min-height:400px; border:none; background:#fff; }
+.detail-body pre { white-space:pre-wrap; word-wrap:break-word; font-family:inherit; line-height:1.7; font-size:14px; }
+.detail-actions { padding:12px 24px; border-top:1px solid #eee; display:flex; gap:8px; }
+
+/* Empty state */
+.empty-state {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; color:#888; text-align:center; padding:40px;
+}
+.empty-state .icon { font-size:56px; margin-bottom:16px; opacity:0.6; }
+.empty-state h3 { font-size:16px; color:#555; margin-bottom:8px; }
+.empty-state p { font-size:13px; line-height:1.6; max-width:400px; }
+
+/* Gmail setup modal */
+.modal-overlay {
+  display:none; position:fixed; top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;
+}
+.modal-overlay.show { display:flex; }
+.modal {
+  background:#fff; border-radius:12px; padding:24px; width:90%; max-width:500px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.2);
+}
+.modal h3 { font-size:16px; margin-bottom:16px; }
+.modal label { font-size:12px; color:#666; display:block; margin-bottom:4px; margin-top:12px; }
+.modal input {
+  width:100%; padding:9px 12px; border:1px solid #ddd; border-radius:6px;
+  font-size:13px;
+}
+.modal input:focus { outline:none; border-color:#1a73e8; }
+.modal .modal-actions { margin-top:20px; display:flex; gap:8px; justify-content:flex-end; }
+.modal .info-text { font-size:11px; color:#888; margin-top:8px; line-height:1.5; }
+
+/* Toast */
+.toast {
+  position:fixed; bottom:20px; right:20px;
+  background:#333; color:#fff; padding:12px 20px;
+  border-radius:8px; font-size:13px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  transform:translateY(100px); opacity:0;
+  transition:all 0.3s ease; z-index:200;
+}
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { background:#0f9d58; }
+.toast.error { background:#d93025; }
+
+/* Responsive */
+@media (max-width:768px) {
+  .container { flex-direction:column; }
+  .sidebar { width:100%; max-height:180px; overflow-y:auto; }
+  .email-item { grid-template-columns:1fr auto; }
+  .email-item .sender { display:none; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📧 Web Mail Viewer</h1>
+  <div class="stats" id="stats">0 アカウント · 0 通</div>
+</div>
+
+<div class="container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>📋 登録アカウント</h3>
+    </div>
+    <div id="account-list" style="flex:1;overflow-y:auto;"></div>
+    <div class="add-section">
+      <input type="email" id="new-email" placeholder="メールアドレスを入力..." onkeydown="if(event.key==='Enter')addAccount()">
+      <button class="btn btn-primary" onclick="addAccount()">＋ アカウント登録</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- List View -->
+    <div id="list-view" style="display:flex;flex-direction:column;height:100%;">
+      <div class="toolbar">
+        <h2 id="list-title">受信トレイ</h2>
+        <div class="toolbar-actions">
+          <button class="btn btn-secondary btn-sm" onclick="refreshEmails()">🔄 更新</button>
+          <button class="btn btn-gmail btn-sm" id="btn-gmail-setup" style="display:none" onclick="showGmailModal()">Gmail連携</button>
+          <button class="btn btn-fetch btn-sm" id="btn-gmail-fetch" style="display:none" onclick="fetchGmail()">📥 Gmail取得</button>
+        </div>
+      </div>
+      <div class="email-list" id="email-list">
+        <div class="empty-state">
+          <div class="icon">📬</div>
+          <h3>ようこそ</h3>
+          <p>左のサイドバーからメールアドレスを登録してください。<br>
+          Gmail連携を設定すると、そのアドレスに届いたメールをここで確認できます。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail View -->
+    <div class="email-detail" id="detail-view">
+      <div class="detail-header">
+        <div style="margin-bottom:12px">
+          <button class="btn btn-secondary btn-sm" onclick="showList()">← 一覧に戻る</button>
+        </div>
+        <div class="subject-line" id="detail-subject"></div>
+        <div class="detail-meta">
+          <div class="meta-row" id="detail-from"></div>
+          <div class="meta-row" id="detail-to"></div>
+          <div class="meta-row" id="detail-date"></div>
+        </div>
+      </div>
+      <div class="detail-body" id="detail-body"></div>
+      <div class="detail-actions">
+        <button class="btn btn-secondary btn-sm" onclick="toggleRead()">📖 未読にする</button>
+        <button class="btn btn-secondary btn-sm" style="background:#fce8e6;color:#d93025;" onclick="deleteCurrentEmail()">🗑 削除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gmail Setup Modal -->
+<div class="modal-overlay" id="gmail-modal">
+  <div class="modal">
+    <h3>📧 Gmail連携設定</h3>
+    <p style="font-size:13px;color:#555;margin-bottom:8px;">Gmail APIを使ってメールを取得します。Google Cloud Consoleで取得した情報を入力してください。</p>
+    
+    <label>Gmail アドレス（登録済みのもの）</label>
+    <input type="email" id="gmail-email" placeholder="example@gmail.com" readonly>
+    
+    <label>Client ID</label>
+    <input type="text" id="gmail-client-id" placeholder="xxxxx.apps.googleusercontent.com">
+    
+    <label>API Key (または App Password)</label>
+    <input type="password" id="gmail-app-password" placeholder="Googleアプリパスワード (16文字)">
+    
+    <div class="info-text">
+      ※ Gmailの「アプリパスワード」を使用します。<br>
+      Google アカウント → セキュリティ → 2段階認証 → アプリパスワード で生成できます。<br>
+      または Gmail API (OAuth) を使う場合は別途サーバーが必要です。
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeGmailModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveGmailConfig()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Storage (LocalStorage-based, no server needed) ───
+const STORAGE_KEY = 'webMailViewer';
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return { accounts: [], emails: [], gmailConfigs: {} };
+  try { return JSON.parse(raw); } catch(e) { return { accounts: [], emails: [], gmailConfigs: {} }; }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+let data = loadData();
+let currentAccountId = null;
+let currentEmailId = null;
+
+// ─── Toast ───
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ─── Accounts ───
+function renderAccounts() {
+  const el = document.getElementById('account-list');
+  if (data.accounts.length === 0) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;">アカウント未登録</div>';
+  } else {
+    el.innerHTML = data.accounts.map(a => {
+      const unread = data.emails.filter(e => e.accountId === a.id && !e.isRead).length;
+      return `
+        <div class="account-item ${a.id === currentAccountId ? 'active' : ''}" onclick="selectAccount('${a.id}')">
+          <div>
+            <div class="email-text">${a.email}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
+            <button class="delete-btn" onclick="event.stopPropagation();deleteAccount('${a.id}')" title="削除">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  updateStats();
+}
+
+function addAccount() {
+  const input = document.getElementById('new-email');
+  const email = input.value.trim();
+  if (!email) return showToast('メールアドレスを入力してください', 'error');
+  if (!email.includes('@')) return showToast('有効なメールアドレスを入力してください', 'error');
+  
+  if (data.accounts.find(a => a.email === email)) {
+    return showToast('このアドレスは既に登録されています', 'error');
+  }
+  
+  const account = {
+    id: Date.now().toString(36) + Math.random().toString(36).substr(2,5),
+    email: email,
+    createdAt: new Date().toISOString()
+  };
+  data.accounts.push(account);
+  saveData(data);
+  input.value = '';
+  showToast(`${email} を登録しました`, 'success');
+  renderAccounts();
+  selectAccount(account.id);
+}
+
+function deleteAccount(id) {
+  if (!confirm('このアカウントと関連メールを削除しますか？')) return;
+  data.accounts = data.accounts.filter(a => a.id !== id);
+  data.emails = data.emails.filter(e => e.accountId !== id);
+  if (data.gmailConfigs) delete data.gmailConfigs[id];
+  saveData(data);
+  if (currentAccountId === id) { currentAccountId = null; showList(); }
+  renderAccounts();
+  renderEmails();
+  showToast('アカウントを削除しました', 'success');
+}
+
+function selectAccount(id) {
+  currentAccountId = id;
+  renderAccounts();
+  renderEmails();
+  showList();
+  
+  const account = data.accounts.find(a => a.id === id);
+  document.getElementById('list-title').textContent = account ? account.email : '受信トレイ';
+  document.getElementById('btn-gmail-setup').style.display = 'inline-flex';
+  
+  const hasGmail = data.gmailConfigs && data.gmailConfigs[id];
+  document.getElementById('btn-gmail-fetch').style.display = hasGmail ? 'inline-flex' : 'none';
+}
+
+// ─── Emails ───
+function renderEmails() {
+  const el = document.getElementById('email-list');
+  if (!currentAccountId) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📬</div><h3>ようこそ</h3><p>左のサイドバーからメールアドレスを登録してください。</p></div>`;
+    return;
+  }
+  
+  const emails = data.emails
+    .filter(e => e.accountId === currentAccountId)
+    .sort((a,b) => new Date(b.receivedAt) - new Date(a.receivedAt));
+  
+  if (emails.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h3>メールなし</h3><p>このアドレスにメールが届くとここに表示されます。<br>Gmail連携を設定してメールを取得してみましょう。</p></div>`;
+    return;
+  }
+  
+  el.innerHTML = emails.map(e => `
+    <div class="email-item ${e.isRead ? '' : 'unread'}" onclick="openEmail('${e.id}')">
+      <div class="sender">${escapeHtml(e.fromName || e.from)}</div>
+      <div class="subject-line">
+        <span class="subject">${escapeHtml(e.subject || '(件名なし)')}</span>
+        <span class="source-tag ${e.source || 'smtp'}">${e.source || 'smtp'}</span>
+        <span class="preview">— ${escapeHtml((e.bodyText || '').substring(0, 60))}</span>
+      </div>
+      <div class="date">${formatDate(e.receivedAt)}</div>
+    </div>
+  `).join('');
+}
+
+function openEmail(id) {
+  const email = data.emails.find(e => e.id === id);
+  if (!email) return;
+  
+  currentEmailId = id;
+  email.isRead = true;
+  saveData(data);
+  renderAccounts();
+  
+  document.getElementById('detail-subject').textContent = email.subject || '(件名なし)';
+  document.getElementById('detail-from').innerHTML = `<strong>差出人:</strong> ${escapeHtml(email.fromName ? email.fromName + ' <' + email.from + '>' : email.from)}`;
+  document.getElementById('detail-to').innerHTML = `<strong>宛先:</strong> ${escapeHtml(email.to)}`;
+  document.getElementById('detail-date').innerHTML = `<strong>日時:</strong> ${new Date(email.receivedAt).toLocaleString('ja-JP')}`;
+  
+  const bodyEl = document.getElementById('detail-body');
+  if (email.bodyHtml) {
+    bodyEl.innerHTML = `<iframe class="html-frame" srcdoc="${email.bodyHtml.replace(/"/g, '&quot;')}" sandbox="allow-same-origin"></iframe>`;
+  } else {
+    bodyEl.innerHTML = `<pre>${escapeHtml(email.bodyText || '(本文なし)')}</pre>`;
+  }
+  
+  document.getElementById('list-view').style.display = 'none';
+  document.getElementById('detail-view').classList.add('show');
+}
+
+function showList() {
+  document.getElementById('list-view').style.display = 'flex';
+  document.getElementById('detail-view').classList.remove('show');
+  currentEmailId = null;
+  renderEmails();
+}
+
+function toggleRead() {
+  if (!currentEmailId) return;
+  const email = data.emails.find(e => e.id === currentEmailId);
+  if (email) {
+    email.isRead = !email.isRead;
+    saveData(data);
+    renderAccounts();
+    showToast(email.isRead ? '既読にしました' : '未読にしました', 'success');
+  }
+}
+
+function deleteCurrentEmail() {
+  if (!currentEmailId) return;
+  if (!confirm('このメールを削除しますか？')) return;
+  data.emails = data.emails.filter(e => e.id !== currentEmailId);
+  saveData(data);
+  showList();
+  renderAccounts();
+  showToast('メールを削除しました', 'success');
+}
+
+function refreshEmails() {
+  renderEmails();
+  showToast('表示を更新しました', 'success');
+}
+
+// ─── Gmail Integration (using IMAP proxy via public CORS proxy or direct fetch) ───
+function showGmailModal() {
+  if (!currentAccountId) return;
+  const account = data.accounts.find(a => a.id === currentAccountId);
+  document.getElementById('gmail-email').value = account ? account.email : '';
+  
+  // Load existing config
+  const config = data.gmailConfigs?.[currentAccountId];
+  if (config) {
+    document.getElementById('gmail-app-password').value = config.appPassword || '';
+  }
+  
+  document.getElementById('gmail-modal').classList.add('show');
+}
+
+function closeGmailModal() {
+  document.getElementById('gmail-modal').classList.remove('show');
+}
+
+function saveGmailConfig() {
+  const appPassword = document.getElementById('gmail-app-password').value.trim();
+  
+  if (!appPassword) {
+    return showToast('アプリパスワードを入力してください', 'error');
+  }
+  
+  if (!data.gmailConfigs) data.gmailConfigs = {};
+  data.gmailConfigs[currentAccountId] = {
+    appPassword: appPassword
+  };
+  saveData(data);
+  closeGmailModal();
+  document.getElementById('btn-gmail-fetch').style.display = 'inline-flex';
+  showToast('Gmail設定を保存しました', 'success');
+}
+
+async function fetchGmail() {
+  if (!currentAccountId) return;
+  const account = data.accounts.find(a => a.id === currentAccountId);
+  const config = data.gmailConfigs?.[currentAccountId];
+  
+  if (!config || !config.appPassword) {
+    return showToast('Gmail連携を先に設定してください', 'error');
+  }
+  
+  showToast('Gmailからメールを取得中...', '');
+  
+  try {
+    // Use Gmail API via fetch with app password (Basic Auth over IMAP isn't possible in browser)
+    // Instead, we use the Gmail REST API with an access token approach
+    // For browser-only solution, we'll use a workaround with Google's Atom feed
+    
+    const email = account.email;
+    const password = config.appPassword;
+    
+    // Try fetching via Gmail Atom feed (works with app passwords)
+    const authHeader = 'Basic ' + btoa(email + ':' + password);
+    
+    const response = await fetch('https://mail.google.com/mail/feed/atom', {
+      headers: {
+        'Authorization': authHeader
+      }
+    });
+    
+    if (!response.ok) {
+      // CORS will likely block this, so we use an alternative approach
+      throw new Error('CORS_BLOCKED');
+    }
+    
+    const text = await response.text();
+    parseAtomFeed(text, account);
+    
+  } catch (err) {
+    if (err.message === 'CORS_BLOCKED' || err.name === 'TypeError') {
+      // Browser CORS restriction - use demo/simulation mode
+      // In production, this would go through a backend proxy
+      showToast('ブラウザのセキュリティ制限により直接取得できません。デモメールを追加します。', 'error');
+      addDemoEmails(account);
+    } else {
+      showToast('Gmail取得エラー: ' + err.message, 'error');
+    }
+  }
+}
+
+function parseAtomFeed(xml, account) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'text/xml');
+  const entries = doc.querySelectorAll('entry');
+  
+  let newCount = 0;
+  entries.forEach(entry => {
+    const title = entry.querySelector('title')?.textContent || '(件名なし)';
+    const summary = entry.querySelector('summary')?.textContent || '';
+    const authorName = entry.querySelector('author name')?.textContent || '';
+    const authorEmail = entry.querySelector('author email')?.textContent || '';
+    const issued = entry.querySelector('issued')?.textContent || new Date().toISOString();
+    const id = entry.querySelector('id')?.textContent || '';
+    
+    // Check duplicate
+    if (data.emails.find(e => e.messageId === id && e.accountId === account.id)) return;
+    
+    data.emails.push({
+      id: Date.now().toString(36) + Math.random().toString(36).substr(2,5) + newCount,
+      accountId: account.id,
+      messageId: id,
+      from: authorEmail,
+      fromName: authorName,
+      to: account.email,
+      subject: title,
+      bodyText: summary,
+      bodyHtml: '',
+      receivedAt: issued,
+      isRead: false,
+      source: 'gmail'
+    });
+    newCount++;
+  });
+  
+  saveData(data);
+  renderEmails();
+  renderAccounts();
+  showToast(`${newCount}件の新しいメールを取得しました`, 'success');
+}
+
+function addDemoEmails(account) {
+  // Add sample emails to demonstrate the UI
+  const demoEmails = [
+    {
+      from: 'notifications@github.com',
+      fromName: 'GitHub',
+      subject: '[GitHub] New login from Chrome on Windows',
+      bodyText: 'A new sign-in was detected on your GitHub account.\n\nDevice: Chrome on Windows\nLocation: Tokyo, Japan\nTime: ' + new Date().toLocaleString('ja-JP') + '\n\nIf this was you, no action is needed.\nIf not, please secure your account immediately.',
+      bodyHtml: ''
+    },
+    {
+      from: 'noreply@google.com',
+      fromName: 'Google',
+      subject: 'セキュリティ通知: 新しいデバイスからのログイン',
+      bodyText: 'お使いのGoogleアカウントに新しいデバイスからログインがありました。\n\nデバイス: iPhone\n場所: 日本、東京\n\n心当たりがない場合は、すぐにパスワードを変更してください。',
+      bodyHtml: ''
+    },
+    {
+      from: 'newsletter@example.com',
+      fromName: 'Tech Weekly',
+      subject: '今週のテクノロジーニュース - AI最新動向',
+      bodyText: '今週のハイライト:\n\n1. 新しいAIモデルが発表されました\n2. クラウドコンピューティングの最新トレンド\n3. サイバーセキュリティの重要な更新\n\n詳しくはWebサイトをご覧ください。',
+      bodyHtml: ''
+    }
+  ];
+  
+  let added = 0;
+  demoEmails.forEach((demo, i) => {
+    const emailId = Date.now().toString(36) + Math.random().toString(36).substr(2,5) + i;
+    data.emails.push({
+      id: emailId,
+      accountId: account.id,
+      messageId: 'demo-' + emailId,
+      from: demo.from,
+      fromName: demo.fromName,
+      to: account.email,
+      subject: demo.subject,
+      bodyText: demo.bodyText,
+      bodyHtml: demo.bodyHtml,
+      receivedAt: new Date(Date.now() - i * 3600000).toISOString(),
+      isRead: false,
+      source: 'gmail'
+    });
+    added++;
+  });
+  
+  saveData(data);
+  renderEmails();
+  renderAccounts();
+  showToast(`デモ: ${added}件のサンプルメールを追加しました`, 'success');
+}
+
+// ─── Simulate receiving email (for testing without SMTP server) ───
+function simulateReceiveEmail() {
+  if (!currentAccountId) return showToast('アカウントを選択してください', 'error');
+  const account = data.accounts.find(a => a.id === currentAccountId);
+  
+  const senders = [
+    { from: 'info@amazon.co.jp', name: 'Amazon.co.jp' },
+    { from: 'support@apple.com', name: 'Apple' },
+    { from: 'team@slack.com', name: 'Slack' },
+    { from: 'hello@notion.so', name: 'Notion' },
+  ];
+  const subjects = [
+    'ご注文の確認',
+    'アカウントのセキュリティについて',
+    'チームからの新しいメッセージ',
+    '今月のアップデート情報',
+    'お支払い完了のお知らせ',
+  ];
+  
+  const sender = senders[Math.floor(Math.random() * senders.length)];
+  const subject = subjects[Math.floor(Math.random() * subjects.length)];
+  
+  data.emails.push({
+    id: Date.now().toString(36) + Math.random().toString(36).substr(2,5),
+    accountId: currentAccountId,
+    messageId: 'sim-' + Date.now(),
+    from: sender.from,
+    fromName: sender.name,
+    to: account.email,
+    subject: subject,
+    bodyText: `これは ${sender.name} からの自動メールです。\n\n${subject}\n\nこのメールはテスト目的で生成されました。\n実際のサービスでは、SMTPサーバーを通じてリアルなメールが受信されます。\n\n---\n${sender.name} チーム`,
+    bodyHtml: '',
+    receivedAt: new Date().toISOString(),
+    isRead: false,
+    source: 'smtp'
+  });
+  
+  saveData(data);
+  renderEmails();
+  renderAccounts();
+  showToast('新しいメールを受信しました！', 'success');
+}
+
+// ─── Helpers ───
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
+  }
+  if (now.getFullYear() === d.getFullYear()) {
+    return d.toLocaleDateString('ja-JP', { month:'short', day:'numeric' });
+  }
+  return d.toLocaleDateString('ja-JP', { year:'numeric', month:'short', day:'numeric' });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateStats() {
+  const total = data.emails.length;
+  const unread = data.emails.filter(e => !e.isRead).length;
+  document.getElementById('stats').textContent = 
+    `${data.accounts.length} アカウント · ${total} 通 · ${unread} 未読`;
+}
+
+// ─── Keyboard shortcut for testing ───
+document.addEventListener('keydown', (e) => {
+  // Ctrl+M to simulate receiving an email
+  if (e.ctrlKey && e.key === 'm') {
+    e.preventDefault();
+    simulateReceiveEmail();
+  }
+});
+
+// ─── Init ───
+renderAccounts();
+renderEmails();
+
+// Add a subtle hint about Ctrl+M
+console.log('💡 ヒント: Ctrl+M でテストメールを受信できます');
+</script>
+</body>
+</html>
