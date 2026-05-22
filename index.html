@@ -11,15 +11,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 /* Auth Container */
 #auth-container {
-  display: flex; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5;
+  display: none; align-items: center; justify-content: center; height: 100vh; background: #f0f2f5;
 }
 .auth-box {
   background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px;
 }
 .auth-box h2 { margin-bottom: 24px; text-align: center; color: #1a73e8; }
-.auth-box input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 6px; }
-.auth-box button { width: 100%; padding: 12px; background: #1a73e8; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 8px; }
+.auth-box input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.auth-box input:focus { outline: none; border-color: #1a73e8; }
+.auth-box button { width: 100%; padding: 12px; background: #1a73e8; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+.auth-box button:hover { background: #1557b0; }
 .auth-box button.secondary { background: #e8eaed; color: #333; }
+.auth-box button.secondary:hover { background: #d2d5d9; }
+.auth-box .error-msg { color: #d93025; font-size: 12px; margin-bottom: 12px; display: none; }
 
 /* App Container */
 #app-container { display: none; flex-direction: column; height: 100vh; }
@@ -27,24 +31,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 /* Header */
 .header {
   background:linear-gradient(135deg, #1a73e8, #0d47a1);
-  color:#fff; padding:16px 24px;
+  color:#fff; padding:14px 24px;
   display:flex; align-items:center; justify-content:space-between;
   box-shadow:0 2px 8px rgba(0,0,0,0.15);
 }
-.header h1 { font-size:20px; font-weight:600; display:flex; align-items:center; gap:8px; }
-.header .user-info { display: flex; align-items: center; gap: 12px; font-size: 14px; }
-.header .logout-btn { background: rgba(255,255,255,0.2); color: #fff; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; }
+.header h1 { font-size:20px; font-weight:600; }
+.header .user-info { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.header .logout-btn { background: rgba(255,255,255,0.2); color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.header .logout-btn:hover { background: rgba(255,255,255,0.3); }
 
 /* Layout */
 .container { display:flex; flex: 1; overflow: hidden; }
 
 /* Sidebar */
 .sidebar {
-  width:300px; background:#fff; border-right:1px solid #e0e0e0;
+  width:280px; background:#fff; border-right:1px solid #e0e0e0;
   display:flex; flex-direction:column;
 }
 .sidebar-section { padding:14px 16px; border-bottom:1px solid #eee; }
-.sidebar-section h3 { font-size:12px; color:#666; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
+.sidebar-section h3 { font-size:11px; color:#666; text-transform:uppercase; letter-spacing:0.5px; }
 
 .account-item {
   padding:10px 16px; cursor:pointer; border-bottom:1px solid #f5f5f5;
@@ -64,6 +69,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   width:100%; padding:9px 12px; border:1px solid #ddd; border-radius:6px;
   font-size:13px; margin-bottom:8px;
 }
+.add-section input:focus { outline: none; border-color: #1a73e8; }
 
 .btn {
   padding:8px 16px; border:none; border-radius:6px;
@@ -71,9 +77,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   transition:all 0.15s; display:inline-flex; align-items:center; gap:4px;
 }
 .btn-primary { background:#1a73e8; color:#fff; width:100%; justify-content:center; }
+.btn-primary:hover { background:#1557b0; }
 .btn-secondary { background:#e8eaed; color:#333; }
+.btn-secondary:hover { background:#d2d5d9; }
 .btn-sm { padding:5px 10px; font-size:12px; }
 .btn-fetch { background:#34a853; color:#fff; }
+.btn-fetch:hover { background:#2d8e47; }
+.btn-demo { background:#f9ab00; color:#fff; }
+.btn-demo:hover { background:#e09900; }
 
 /* Main */
 .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
@@ -84,62 +95,70 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   display:flex; align-items:center; justify-content:space-between; gap:10px;
 }
 .toolbar h2 { font-size:15px; color:#333; }
+.toolbar-actions { display: flex; gap: 6px; }
 
 /* Email list */
 .email-list { flex:1; overflow-y:auto; background:#fff; }
 .email-item {
   padding:12px 20px; border-bottom:1px solid #f0f0f0;
-  cursor:pointer; display:grid; grid-template-columns:180px 1fr auto;
-  align-items:center; gap:12px;
+  cursor:pointer; display:grid; grid-template-columns:160px 1fr auto;
+  align-items:center; gap:12px; transition: background 0.1s;
 }
 .email-item:hover { background:#f8f9fa; }
-.email-item.unread { background:#e8f0fe; font-weight: 600; }
+.email-item.unread { background:#e8f0fe; }
+.email-item.unread .sender, .email-item.unread .subject { font-weight: 600; }
 .email-item .sender { font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .email-item .subject { font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.email-item .date { font-size:11px; color:#888; }
+.email-item .date { font-size:11px; color:#888; white-space: nowrap; }
+
+/* Empty state */
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#888; text-align:center; padding:40px; }
+.empty-state .icon { font-size:48px; margin-bottom:12px; opacity:0.6; }
+.empty-state p { font-size:13px; line-height:1.6; }
 
 /* Detail View */
 .email-detail { display:none; flex-direction:column; height:100%; background:#fff; }
 .email-detail.show { display:flex; }
 .detail-header { padding:16px 24px; border-bottom:1px solid #eee; }
-.detail-body { flex:1; overflow-y:auto; padding:20px 24px; line-height: 1.6; }
+.detail-header h2 { margin-top: 12px; font-size: 18px; }
+.detail-meta { font-size:13px; color:#666; margin-top:8px; line-height: 1.6; }
+.detail-body { flex:1; overflow-y:auto; padding:20px 24px; line-height: 1.7; font-size: 14px; }
+.detail-body pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; }
+.detail-actions { padding: 12px 24px; border-top: 1px solid #eee; display: flex; gap: 8px; }
 
 /* Toast */
 .toast {
   position:fixed; bottom:20px; right:20px;
   background:#333; color:#fff; padding:12px 20px;
   border-radius:8px; font-size:13px;
-  display: none; z-index:200;
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.3s ease; z-index:200;
 }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background:#0f9d58; }
+.toast.error { background:#d93025; }
 
-/* Config Overlay */
-#config-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
-  display: flex; align-items: center; justify-content: center; z-index: 1000;
+/* Responsive */
+@media (max-width:768px) {
+  .container { flex-direction: column; }
+  .sidebar { width: 100%; max-height: 160px; overflow-y: auto; }
+  .email-item { grid-template-columns: 1fr auto; }
+  .email-item .sender { display: none; }
 }
 </style>
 </head>
 <body>
 
-<!-- Supabase Config Modal -->
-<div id="config-overlay">
-  <div class="auth-box">
-    <h2>Supabase 設定</h2>
-    <p style="font-size: 12px; color: #666; margin-bottom: 16px;">Supabaseのプロジェクト情報を入力してください。</p>
-    <input type="text" id="supa-url" placeholder="Supabase URL (https://xxx.supabase.co)">
-    <input type="text" id="supa-key" placeholder="Supabase Anon Key">
-    <button onclick="saveConfig()">設定を保存して開始</button>
-  </div>
-</div>
-
 <!-- Auth UI -->
-<div id="auth-container" style="display: none;">
+<div id="auth-container">
   <div class="auth-box">
-    <h2>Login / Sign Up</h2>
-    <input type="email" id="auth-email" placeholder="Email">
-    <input type="password" id="auth-password" placeholder="Password">
+    <h2>📧 Web Mail Viewer</h2>
+    <div class="error-msg" id="auth-error"></div>
+    <input type="email" id="auth-email" placeholder="メールアドレス">
+    <input type="password" id="auth-password" placeholder="パスワード（6文字以上）">
     <button onclick="handleAuth('login')">ログイン</button>
     <button class="secondary" onclick="handleAuth('signup')">新規登録</button>
+    <p style="font-size:11px; color:#888; margin-top:12px; text-align:center;">Supabase Authで認証します</p>
   </div>
 </div>
 
@@ -160,29 +179,42 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
       <div id="account-list" style="flex:1;overflow-y:auto;"></div>
       <div class="add-section">
-        <input type="email" id="new-account-email" placeholder="メールアドレスを入力...">
+        <input type="email" id="new-account-email" placeholder="メールアドレスを入力..." onkeydown="if(event.key==='Enter')addAccount()">
         <button class="btn btn-primary" onclick="addAccount()">＋ アカウント登録</button>
       </div>
     </div>
 
     <div class="main">
+      <!-- List View -->
       <div id="list-view" style="display:flex;flex-direction:column;height:100%;">
         <div class="toolbar">
           <h2 id="list-title">受信トレイ</h2>
           <div class="toolbar-actions">
-            <button class="btn btn-fetch btn-sm" id="btn-fetch" style="display:none" onclick="fetchEmails()">📥 Gmail取得 (Edge Function)</button>
+            <button class="btn btn-demo btn-sm" id="btn-demo" style="display:none" onclick="addDemoEmails()">📨 テストメール追加</button>
+            <button class="btn btn-secondary btn-sm" id="btn-refresh" style="display:none" onclick="loadEmails()">🔄 更新</button>
+            <button class="btn btn-fetch btn-sm" id="btn-fetch" style="display:none" onclick="fetchEmails()">📥 Gmail取得</button>
           </div>
         </div>
-        <div class="email-list" id="email-list"></div>
+        <div class="email-list" id="email-list">
+          <div class="empty-state">
+            <div class="icon">📬</div>
+            <p>左のサイドバーからメールアドレスを登録してください。<br>登録後「テストメール追加」で動作確認できます。</p>
+          </div>
+        </div>
       </div>
 
+      <!-- Detail View -->
       <div class="email-detail" id="detail-view">
         <div class="detail-header">
           <button class="btn btn-secondary btn-sm" onclick="showList()">← 一覧に戻る</button>
-          <h2 id="detail-subject" style="margin-top:12px"></h2>
-          <div id="detail-meta" style="font-size:13px; color:#666; margin-top:8px;"></div>
+          <h2 id="detail-subject"></h2>
+          <div class="detail-meta" id="detail-meta"></div>
         </div>
         <div class="detail-body" id="detail-body"></div>
+        <div class="detail-actions">
+          <button class="btn btn-secondary btn-sm" onclick="deleteCurrentEmail()">🗑 削除</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleRead()">📖 未読にする</button>
+        </div>
       </div>
     </div>
   </div>
@@ -192,58 +224,76 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 const { createClient } = window.supabase;
-let sb;
-let currentUser;
+
+// Supabase設定（ハードコード）
+const SUPABASE_URL = 'https://dgfguaswqlsapgbfvtdv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZmd1YXN3cWxzYXBnYmZ2dGR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTEwMjgsImV4cCI6MjA5NDkyNzAyOH0.qz7VNnEe53G3Fa7fE5VMkVbf-W6ws98muePAdSZqKQY';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
 let accounts = [];
 let currentAccountId = null;
+let currentEmailId = null;
 
-// --- Config ---
-function saveConfig() {
-  const url = document.getElementById('supa-url').value;
-  const key = document.getElementById('supa-key').value;
-  if (!url || !key) return alert('URLとKeyを入力してください');
-  localStorage.setItem('supa_url', url);
-  localStorage.setItem('supa_key', key);
-  initSupabase();
+// ─── Toast ───
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
 }
 
-function initSupabase() {
-  const url = localStorage.getItem('supa_url') || 'https://dgfguaswqlsapgbfvtdv.supabase.co';
-  const key = localStorage.getItem('supa_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnZmd1YXN3cWxzYXBnYmZ2dGR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTEwMjgsImV4cCI6MjA5NDkyNzAyOH0.qz7VNnEe53G3Fa7fE5VMkVbf-W6ws98muePAdSZqKQY';
-  if (!url || !key) {
-    document.getElementById('config-overlay').style.display = 'flex';
-    return;
-  }
-  document.getElementById('config-overlay').style.display = 'none';
-  sb = createClient(url, key);
-  checkUser();
-}
-
-// --- Auth ---
-async function checkUser() {
+// ─── Auth ───
+async function init() {
   const { data: { user } } = await sb.auth.getUser();
   if (user) {
     currentUser = user;
-    document.getElementById('auth-container').style.display = 'none';
-    document.getElementById('app-container').style.display = 'flex';
-    document.getElementById('user-display').textContent = user.email;
-    loadAccounts();
-    subscribeToEmails();
+    showApp();
   } else {
     document.getElementById('auth-container').style.display = 'flex';
-    document.getElementById('app-container').style.display = 'none';
   }
 }
 
+function showApp() {
+  document.getElementById('auth-container').style.display = 'none';
+  document.getElementById('app-container').style.display = 'flex';
+  document.getElementById('user-display').textContent = currentUser.email;
+  loadAccounts();
+  subscribeToEmails();
+}
+
 async function handleAuth(type) {
-  const email = document.getElementById('auth-email').value;
+  const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
-  const { error } = type === 'login' 
-    ? await sb.auth.signInWithPassword({ email, password })
-    : await sb.auth.signUp({ email, password });
-  
-  if (error) alert(error.message);
-  else checkUser();
+  const errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+
+  if (!email || !password) {
+    errEl.textContent = 'メールアドレスとパスワードを入力してください';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  let result;
+  if (type === 'login') {
+    result = await sb.auth.signInWithPassword({ email, password });
+  } else {
+    result = await sb.auth.signUp({ email, password });
+  }
+
+  if (result.error) {
+    errEl.textContent = result.error.message;
+    errEl.style.display = 'block';
+  } else {
+    if (type === 'signup' && !result.data.user?.confirmed_at) {
+      showToast('確認メールを送信しました。メールを確認してください。', 'success');
+    }
+    const { data: { user } } = await sb.auth.getUser();
+    if (user) {
+      currentUser = user;
+      showApp();
+    }
+  }
 }
 
 async function logout() {
@@ -251,51 +301,78 @@ async function logout() {
   location.reload();
 }
 
-// --- Accounts ---
+// ─── Accounts ───
 async function loadAccounts() {
   const { data, error } = await sb.from('accounts').select('*');
-  if (error) return console.error(error);
-  accounts = data;
-  renderAccounts();
-}
-
-async function addAccount() {
-  const email = document.getElementById('new-account-email').value;
-  if (!email) return;
-  const { error } = await sb.from('accounts').insert([{ email, user_id: currentUser.id }]);
-  if (error) alert(error.message);
-  else {
-    document.getElementById('new-account-email').value = '';
-    loadAccounts();
+  if (error) {
+    console.error('loadAccounts error:', error);
+    return;
   }
+  accounts = data || [];
+  renderAccounts();
 }
 
 function renderAccounts() {
   const el = document.getElementById('account-list');
+  if (accounts.length === 0) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;">アカウント未登録</div>';
+    return;
+  }
   el.innerHTML = accounts.map(a => `
     <div class="account-item ${a.id === currentAccountId ? 'active' : ''}" onclick="selectAccount('${a.id}')">
       <span class="email-text">${a.email}</span>
-      <button class="delete-btn" onclick="deleteAccount('${a.id}')">✕</button>
+      <button class="delete-btn" onclick="event.stopPropagation();deleteAccount('${a.id}')" title="削除">✕</button>
     </div>
   `).join('');
+}
+
+async function addAccount() {
+  const input = document.getElementById('new-account-email');
+  const email = input.value.trim();
+  if (!email) return showToast('メールアドレスを入力してください', 'error');
+
+  const { error } = await sb.from('accounts').insert([{ email, user_id: currentUser.id }]);
+  if (error) {
+    showToast('登録エラー: ' + error.message, 'error');
+  } else {
+    input.value = '';
+    showToast(email + ' を登録しました', 'success');
+    await loadAccounts();
+    // 自動選択
+    const newAccount = accounts.find(a => a.email === email);
+    if (newAccount) selectAccount(newAccount.id);
+  }
 }
 
 function selectAccount(id) {
   currentAccountId = id;
   const account = accounts.find(a => a.id === id);
-  document.getElementById('list-title').textContent = account.email;
+  document.getElementById('list-title').textContent = account ? account.email : '受信トレイ';
   document.getElementById('btn-fetch').style.display = 'inline-flex';
+  document.getElementById('btn-demo').style.display = 'inline-flex';
+  document.getElementById('btn-refresh').style.display = 'inline-flex';
   renderAccounts();
   loadEmails();
+  showList();
 }
 
 async function deleteAccount(id) {
-  if (!confirm('削除しますか？')) return;
+  if (!confirm('このアカウントと全メールを削除しますか？')) return;
+  // まずメールを削除
+  await sb.from('emails').delete().eq('account_id', id);
   await sb.from('accounts').delete().eq('id', id);
+  if (currentAccountId === id) {
+    currentAccountId = null;
+    document.getElementById('email-list').innerHTML = '<div class="empty-state"><div class="icon">📬</div><p>アカウントを選択してください</p></div>';
+    document.getElementById('btn-fetch').style.display = 'none';
+    document.getElementById('btn-demo').style.display = 'none';
+    document.getElementById('btn-refresh').style.display = 'none';
+  }
+  showToast('アカウントを削除しました', 'success');
   loadAccounts();
 }
 
-// --- Emails ---
+// ─── Emails ───
 async function loadEmails() {
   if (!currentAccountId) return;
   const { data, error } = await sb
@@ -303,26 +380,49 @@ async function loadEmails() {
     .select('*')
     .eq('account_id', currentAccountId)
     .order('received_at', { ascending: false });
-  
-  if (error) return;
+
+  if (error) {
+    console.error('loadEmails error:', error);
+    return;
+  }
+
   const el = document.getElementById('email-list');
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>メールはまだありません。<br>「テストメール追加」ボタンで動作確認できます。</p></div>';
+    return;
+  }
+
   el.innerHTML = data.map(e => `
     <div class="email-item ${e.is_read ? '' : 'unread'}" onclick="viewEmail('${e.id}')">
-      <div class="sender">${e.from_name || e.from_address}</div>
-      <div class="subject">${e.subject || '(No Subject)'}</div>
-      <div class="date">${new Date(e.received_at).toLocaleDateString()}</div>
+      <div class="sender">${escapeHtml(e.from_name || e.from_address)}</div>
+      <div class="subject">${escapeHtml(e.subject || '(件名なし)')}</div>
+      <div class="date">${formatDate(e.received_at)}</div>
     </div>
   `).join('');
 }
 
 async function viewEmail(id) {
-  const { data: email } = await sb.from('emails').select('*').eq('id', id).single();
+  const { data: email, error } = await sb.from('emails').select('*').eq('id', id).single();
+  if (error || !email) return;
+
+  currentEmailId = id;
   document.getElementById('list-view').style.display = 'none';
   document.getElementById('detail-view').classList.add('show');
-  document.getElementById('detail-subject').textContent = email.subject;
-  document.getElementById('detail-meta').textContent = `From: ${email.from_address} | Date: ${new Date(email.received_at).toLocaleString()}`;
-  document.getElementById('detail-body').innerHTML = email.body_html || `<pre>${email.body_text}</pre>`;
-  
+  document.getElementById('detail-subject').textContent = email.subject || '(件名なし)';
+  document.getElementById('detail-meta').innerHTML = `
+    <div><strong>差出人:</strong> ${escapeHtml(email.from_name ? email.from_name + ' <' + email.from_address + '>' : email.from_address)}</div>
+    <div><strong>宛先:</strong> ${escapeHtml(email.to_address)}</div>
+    <div><strong>日時:</strong> ${new Date(email.received_at).toLocaleString('ja-JP')}</div>
+    <div><strong>ソース:</strong> ${email.source || 'unknown'}</div>
+  `;
+
+  const bodyEl = document.getElementById('detail-body');
+  if (email.body_html) {
+    bodyEl.innerHTML = `<iframe srcdoc="${email.body_html.replace(/"/g, '&quot;')}" style="width:100%;min-height:400px;border:none;" sandbox="allow-same-origin"></iframe>`;
+  } else {
+    bodyEl.innerHTML = `<pre>${escapeHtml(email.body_text || '(本文なし)')}</pre>`;
+  }
+
   if (!email.is_read) {
     await sb.from('emails').update({ is_read: true }).eq('id', id);
     loadEmails();
@@ -332,38 +432,141 @@ async function viewEmail(id) {
 function showList() {
   document.getElementById('list-view').style.display = 'flex';
   document.getElementById('detail-view').classList.remove('show');
+  currentEmailId = null;
 }
 
+async function deleteCurrentEmail() {
+  if (!currentEmailId) return;
+  if (!confirm('このメールを削除しますか？')) return;
+  await sb.from('emails').delete().eq('id', currentEmailId);
+  showToast('メールを削除しました', 'success');
+  showList();
+  loadEmails();
+}
+
+async function toggleRead() {
+  if (!currentEmailId) return;
+  const { data: email } = await sb.from('emails').select('is_read').eq('id', currentEmailId).single();
+  if (email) {
+    await sb.from('emails').update({ is_read: !email.is_read }).eq('id', currentEmailId);
+    showToast(email.is_read ? '未読にしました' : '既読にしました', 'success');
+    loadEmails();
+  }
+}
+
+// ─── Demo Emails (テスト用) ───
+async function addDemoEmails() {
+  if (!currentAccountId) return;
+  const account = accounts.find(a => a.id === currentAccountId);
+  if (!account) return;
+
+  const demoEmails = [
+    {
+      from_address: 'notifications@github.com',
+      from_name: 'GitHub',
+      subject: '[GitHub] セキュリティアラート: 新しいログインが検出されました',
+      body_text: 'お使いのGitHubアカウントに新しいデバイスからのログインがありました。\n\nデバイス: Chrome on Windows\n場所: Tokyo, Japan\n時刻: ' + new Date().toLocaleString('ja-JP') + '\n\n心当たりがある場合は、このメールを無視してください。\n心当たりがない場合は、すぐにパスワードを変更してください。\n\n---\nGitHub Security Team',
+      body_html: '',
+    },
+    {
+      from_address: 'noreply@accounts.google.com',
+      from_name: 'Google',
+      subject: 'セキュリティ通知: 新しいデバイスでのログイン',
+      body_text: 'Googleアカウントに新しいデバイスからログインがありました。\n\nアカウント: ' + account.email + '\nデバイス: iPhone 15\n場所: 日本、東京\n日時: ' + new Date().toLocaleString('ja-JP') + '\n\nこのアクティビティに心当たりがない場合は、アカウントが不正使用されている可能性があります。',
+      body_html: '',
+    },
+    {
+      from_address: 'newsletter@techcrunch.com',
+      from_name: 'TechCrunch Japan',
+      subject: '【週刊】テクノロジーニュース - AI・スタートアップ最新情報',
+      body_text: '今週のトップニュース:\n\n1. OpenAIが新モデルを発表、処理速度が3倍に\n2. 日本のスタートアップが1億ドルの資金調達に成功\n3. Appleが次世代ARデバイスを今秋発売へ\n4. サイバーセキュリティ企業の需要が急増\n5. リモートワーク関連ツールの市場が拡大\n\n詳しくはWebサイトをご覧ください。\n\n---\nTechCrunch Japan 編集部',
+      body_html: '',
+    },
+    {
+      from_address: 'support@amazon.co.jp',
+      from_name: 'Amazon.co.jp',
+      subject: 'ご注文の確認 #503-1234567-8901234',
+      body_text: 'ご注文ありがとうございます。\n\n注文番号: #503-1234567-8901234\n注文日: ' + new Date().toLocaleDateString('ja-JP') + '\n\n商品:\n- ワイヤレスイヤホン Pro Max ¥12,800\n- USB-C ケーブル 2本セット ¥1,280\n\n小計: ¥14,080\n配送料: 無料\n合計: ¥14,080\n\nお届け予定日: ' + new Date(Date.now() + 86400000*2).toLocaleDateString('ja-JP') + '\n\n---\nAmazon.co.jp カスタマーサービス',
+      body_html: '',
+    },
+    {
+      from_address: 'team@slack.com',
+      from_name: 'Slack',
+      subject: '新しいメッセージがあります (3件の未読)',
+      body_text: 'ワークスペース「Dev Team」で新しいメッセージがあります。\n\n#general - 田中さん: 明日のミーティングは10時からに変更になりました\n#random - 佐藤さん: 今週の金曜日、チームランチどうですか？\n#dev - 鈴木さん: PRレビューお願いします → #142\n\nSlackを開いて確認してください。',
+      body_html: '',
+    }
+  ];
+
+  showToast('テストメールを追加中...', '');
+
+  let added = 0;
+  for (let i = 0; i < demoEmails.length; i++) {
+    const demo = demoEmails[i];
+    const { error } = await sb.from('emails').insert([{
+      account_id: currentAccountId,
+      message_id: 'demo-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2,6),
+      from_address: demo.from_address,
+      from_name: demo.from_name,
+      to_address: account.email,
+      subject: demo.subject,
+      body_text: demo.body_text,
+      body_html: demo.body_html || null,
+      received_at: new Date(Date.now() - i * 1800000).toISOString(),
+      is_read: false,
+      source: 'demo'
+    }]);
+    if (!error) added++;
+  }
+
+  showToast(`${added}件のテストメールを追加しました！`, 'success');
+  loadEmails();
+}
+
+// ─── Gmail Fetch (Edge Function) ───
 async function fetchEmails() {
   if (!currentAccountId) return;
-  showToast('Fetching emails via Edge Function...');
+  showToast('Gmail取得を試みています...', '');
   const { data, error } = await sb.functions.invoke('fetch-gmail', {
     body: { account_id: currentAccountId }
   });
-  if (error) alert(error.message);
-  else showToast('Fetch complete!');
+  if (error) {
+    showToast('Edge Function未設定です。テストメール追加をお使いください。', 'error');
+  } else {
+    showToast('Gmail取得完了！', 'success');
+    loadEmails();
+  }
 }
 
+// ─── Realtime ───
 function subscribeToEmails() {
   sb.channel('emails_realtime')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'emails' }, payload => {
       if (payload.new.account_id === currentAccountId) {
         loadEmails();
-        showToast('New email received!');
+        showToast('新しいメールが届きました！', 'success');
       }
     })
     .subscribe();
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 3000);
+// ─── Helpers ───
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
+  }
+  return d.toLocaleDateString('ja-JP', { month:'short', day:'numeric' });
 }
 
-// Start
-window.onload = initSupabase;
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Start ───
+window.onload = init;
 </script>
 </body>
 </html>
