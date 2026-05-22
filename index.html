@@ -191,7 +191,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <h2 id="list-title">受信トレイ</h2>
           <div class="toolbar-actions">
             <button class="btn btn-demo btn-sm" id="btn-demo" style="display:none" onclick="addDemoEmails()">📨 テストメール追加</button>
-            <button class="btn btn-secondary btn-sm" id="btn-refresh" style="display:none" onclick="loadEmails()">🔄 更新</button>
+            <button class="btn btn-secondary btn-sm" id="btn-refresh" style="display:none" onclick="refreshAll()">🔄 更新</button>
             <button class="btn btn-fetch btn-sm" id="btn-fetch" style="display:none" onclick="fetchEmails()">📥 Gmail取得</button>
           </div>
         </div>
@@ -523,18 +523,48 @@ async function addDemoEmails() {
   loadEmails();
 }
 
-// ─── Gmail Fetch (Edge Function) ───
+// ─── 更新ボタン（Gmail取得 + リロード） ───
+async function refreshAll() {
+  const gasUrl = localStorage.getItem('gas_webapp_url');
+  if (gasUrl) {
+    showToast('Gmailから最新メールを取得中...', '');
+    try {
+      await fetch(gasUrl);
+    } catch(e) { /* CORSエラーでもOK */ }
+    setTimeout(() => { loadEmails(); showToast('更新完了！', 'success'); }, 3000);
+  } else {
+    loadEmails();
+    showToast('メールリストを更新しました', 'success');
+  }
+}
+
+// ─── Gmail Fetch (Google Apps Script Web App) ───
+// ↓ ここにApps ScriptのWebアプリURLを貼り付ける
+const GAS_WEBAPP_URL = localStorage.getItem('gas_webapp_url') || '';
+
 async function fetchEmails() {
   if (!currentAccountId) return;
-  showToast('Gmail取得を試みています...', '');
-  const { data, error } = await sb.functions.invoke('fetch-gmail', {
-    body: { account_id: currentAccountId }
-  });
-  if (error) {
-    showToast('Edge Function未設定です。テストメール追加をお使いください。', 'error');
-  } else {
-    showToast('Gmail取得完了！', 'success');
-    loadEmails();
+  if (!GAS_WEBAPP_URL) {
+    const url = prompt('Google Apps ScriptのWebアプリURLを入力してください（初回のみ）:');
+    if (url) {
+      localStorage.setItem('gas_webapp_url', url);
+      location.reload();
+    }
+    return;
+  }
+  showToast('Gmailから最新メールを取得中...', '');
+  try {
+    const response = await fetch(GAS_WEBAPP_URL);
+    if (response.ok) {
+      showToast('Gmail取得完了！', 'success');
+      setTimeout(() => loadEmails(), 1000);
+    } else {
+      showToast('取得エラー。URLを確認してください。', 'error');
+    }
+  } catch(e) {
+    // CORSエラーでもApps Scriptは実行される
+    showToast('Gmail取得リクエスト送信完了！数秒後に更新されます。', 'success');
+    setTimeout(() => loadEmails(), 3000);
   }
 }
 

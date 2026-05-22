@@ -9,7 +9,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // ↓ SupabaseのSQL Editorで確認したaccount_id を入れてください
 // （アカウント登録後、Table EditorのaccountsテーブルでIDを確認できます）
-const ACCOUNT_ID = 'ここにaccount_idを入れる';
+const ACCOUNT_ID = 'bbdb433e-b849-45d4-9e7a-f734f200d132';
 
 // 取得するメールの件数（最新N件）
 const MAX_EMAILS = 20;
@@ -121,6 +121,27 @@ function setupTrigger() {
     .create();
   
   Logger.log('✅ 5分ごとの自動実行トリガーを設定しました');
+}
+
+// ─── Webアプリとして公開（ブラウザから呼び出し可能） ───
+function doGet(e) {
+  fetchGmailToSupabase();
+  const output = ContentService.createTextOutput(JSON.stringify({
+    status: 'ok',
+    message: 'Gmail取得完了'
+  }));
+  output.setMimeType(ContentService.MimeType.JSON);
+  return output;
+}
+
+function doPost(e) {
+  fetchGmailToSupabase();
+  const output = ContentService.createTextOutput(JSON.stringify({
+    status: 'ok',
+    message: 'Gmail取得完了'
+  }));
+  output.setMimeType(ContentService.MimeType.JSON);
+  return output;
 }
 
 // ─── 手動テスト用 ───
